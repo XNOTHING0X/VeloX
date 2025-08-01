@@ -720,78 +720,98 @@ svg {
         <div class="modal-content">
             <h2>Choose API</h2>
             <div class="modal-buttons">
+			    <button class="modal-button" id="velocity-choice">Velocity</button>
                 <button class="modal-button" id="xeno-choice">Xeno</button>
-                <button class="modal-button" id="velocity-choice">Velocity</button>
+                <button class="modal-button" id="solara-choice">Solara</button>
             </div>
         </div>
     </div>
 
     <script>
-        let selectedExecutor = null; 
+let selectedExecutor = null;
 
-        function safePostMessage(message) {
-            try {
-                if (window.chrome && window.chrome.webview) {
-                    window.chrome.webview.postMessage(message);
-                } else {
-                    console.warn('postMessage not available, continuing execution');
-                }
-            } catch (error) {
-                console.warn('Failed to send postMessage:', error.message);
-            }
+function safePostMessage(message) {
+    try {
+        if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(message);
+        } else {
+            console.warn('postMessage not available, continuing execution');
         }
+    } catch (error) {
+        console.warn('Failed to send postMessage:', error.message);
+    }
+}
 
-        function debounce(func, wait) {
-            let timeout;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        }
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
 
-        function showChoiceModal() {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('choice-modal');
-                modal.style.display = 'flex';
-                setTimeout(() => modal.classList.add('show'), 10);
+function showChoiceModal() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('choice-modal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
 
-                const xenoButton = document.getElementById('xeno-choice');
-                const velocityButton = document.getElementById('velocity-choice');
+        const xenoButton = document.getElementById('xeno-choice');
+        const velocityButton = document.getElementById('velocity-choice');
+        const solaraButton = document.getElementById('solara-choice');
 
-                const xenoHandler = () => {
-                    modal.classList.remove('show');
-                    setTimeout(() => {
-                        modal.style.display = 'none';
-                        selectedExecutor = 'xeno';
-                        safePostMessage('X');
-                        resolve('xeno');
-                    }, 300);
-                    xenoButton.removeEventListener('click', xenoHandler);
-                    velocityButton.removeEventListener('click', velocityHandler);
-                };
-
-                const velocityHandler = () => {
-                    modal.classList.remove('show');
-                    setTimeout(() => {
-                        modal.style.display = 'none';
-                        selectedExecutor = 'velocity';
-                        safePostMessage('V');
-                        resolve('velocity');
-                    }, 300);
-                    xenoButton.removeEventListener('click', xenoHandler);
-                    velocityButton.removeEventListener('click', velocityHandler);
-                };
-
-                xenoButton.addEventListener('click', xenoHandler);
-                velocityButton.addEventListener('click', velocityHandler);
-            });
-        }
-
-            if (selectedExecutor === 'xeno') {
+        const xenoHandler = () => {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                selectedExecutor = 'xeno';
                 safePostMessage('X');
-            } else if (selectedExecutor === 'velocity') {
+                resolve('xeno');
+            }, 300);
+            removeListeners();
+        };
+
+        const velocityHandler = () => {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                selectedExecutor = 'velocity';
                 safePostMessage('V');
-            };
+                resolve('velocity');
+            }, 300);
+            removeListeners();
+        };
+
+        const solaraHandler = () => {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                selectedExecutor = 'solara';
+                safePostMessage('S');
+                resolve('solara');
+            }, 300);
+            removeListeners();
+        };
+
+        function removeListeners() {
+            xenoButton.removeEventListener('click', xenoHandler);
+            velocityButton.removeEventListener('click', velocityHandler);
+            solaraButton.removeEventListener('click', solaraHandler);
+        }
+
+        xenoButton.addEventListener('click', xenoHandler);
+        velocityButton.addEventListener('click', velocityHandler);
+        solaraButton.addEventListener('click', solaraHandler);
+    });
+}
+
+if (selectedExecutor === 'xeno') {
+    safePostMessage('X');
+} else if (selectedExecutor === 'velocity') {
+    safePostMessage('V');
+} else if (selectedExecutor === 'solara') {
+    safePostMessage('S');
+}
 			
         
 
