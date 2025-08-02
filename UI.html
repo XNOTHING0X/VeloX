@@ -18,7 +18,7 @@
     --hover-glow: 0 0 15px var(--glow-color);
     --active-glow: 0 0 20px var(--glow-color);
     --particle-size: 2px;
-    --transition-speed: 0.2s;
+    --transition-speed: 0.4s;
     --particle-count: 50;
 }
 
@@ -674,6 +674,34 @@ svg {
         padding: 15px;
     }
 }
+.modal-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(20, 0, 0, 0.8);
+}
+
+.modal-button.loading {
+    position: relative;
+}
+
+.modal-button.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 0, 0, 0.3);
+    border-top: 2px solid var(--accent-color);
+    border-radius: 50%;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -716,16 +744,17 @@ svg {
         <div id="context-menu"></div>
     </div>
 
-    <div id="choice-modal">
-        <div class="modal-content">
-            <h2>Choose API</h2>
-            <div class="modal-buttons">
-			    <button class="modal-button" id="velocity-choice">Velocity</button>
-                <button class="modal-button" id="xeno-choice">Xeno</button>
-                <button class="modal-button" id="solara-choice">Solara</button>
-            </div>
+<div id="choice-modal">
+    <div class="modal-content">
+        <h2>Choose API</h2>
+        <div class="modal-buttons">
+            <button class="modal-button" id="velocity-choice">Velocity</button>
+            <button class="modal-button" id="xeno-choice">Xeno</button>
+            <button class="modal-button" id="solara-choice">Solara</button>
         </div>
+        <button class="modal-button" id="reload-apis" style="margin-top: 10px; width: 100%;">Reload APIs</button>
     </div>
+</div>
 
     <script>
 let selectedExecutor = null;
@@ -759,6 +788,7 @@ function showChoiceModal() {
         const xenoButton = document.getElementById('xeno-choice');
         const velocityButton = document.getElementById('velocity-choice');
         const solaraButton = document.getElementById('solara-choice');
+        const reloadButton = document.getElementById('reload-apis');
 
         const xenoHandler = () => {
             modal.classList.remove('show');
@@ -792,16 +822,75 @@ function showChoiceModal() {
             }, 300);
             removeListeners();
         };
+const reloadHandler = () => {
+    const reloadButton = document.getElementById('reload-apis');
+    const xenoButton = document.getElementById('xeno-choice');
+    const velocityButton = document.getElementById('velocity-choice');
+    const solaraButton = document.getElementById('solara-choice');
+    let timeLeft = 300;
+    let countdownInterval;
+
+    xenoButton.disabled = true;
+    velocityButton.disabled = true;
+    solaraButton.disabled = true;
+    reloadButton.disabled = true;
+
+    const enableAllButtons = () => {
+        xenoButton.disabled = false;
+        velocityButton.disabled = false;
+        solaraButton.disabled = false;
+        reloadButton.disabled = false;
+    };
+    
+    const showFailedState = () => {
+        clearInterval(countdownInterval);
+        reloadButton.textContent = 'Reload Failed';
+        enableAllButtons();
+        setTimeout(() => {
+            reloadButton.textContent = 'Reload APIs';
+        }, 2000);
+    };
+    
+    countdownInterval = setInterval(() => {
+        timeLeft--;
+        reloadButton.textContent = `Reloading...`;
+
+        if (timeLeft <= 0) {
+            showFailedState();
+        }
+    }, 1000);
+
+
+    safePostMessage('reload');
+
+    if (window.chrome && window.chrome.webview) {
+        const responseHandler = (e) => {
+            if (e.data === 'R') {  
+                clearInterval(countdownInterval);
+                window.chrome.webview.removeEventListener('message', responseHandler);
+                reloadButton.textContent = 'Reload Complete';
+                enableAllButtons();
+                setTimeout(() => {
+                    reloadButton.textContent = 'Reload APIs';
+                }, 2000);
+            }
+        };
+        
+        window.chrome.webview.addEventListener('message', responseHandler);
+    }
+};
 
         function removeListeners() {
             xenoButton.removeEventListener('click', xenoHandler);
             velocityButton.removeEventListener('click', velocityHandler);
             solaraButton.removeEventListener('click', solaraHandler);
+            reloadButton.removeEventListener('click', reloadHandler);
         }
 
         xenoButton.addEventListener('click', xenoHandler);
         velocityButton.addEventListener('click', velocityHandler);
         solaraButton.addEventListener('click', solaraHandler);
+        reloadButton.addEventListener('click', reloadHandler);
     });
 }
 
@@ -866,7 +955,20 @@ if (selectedExecutor === 'xeno') {
             };
             document.head.appendChild(script);
         }
-
+function safePostMessage(message) {
+    try {
+        if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(message);
+            return true;
+        } else {
+            console.warn('WebView2 not available, continuing execution');
+            return false;
+        }
+    } catch (error) {
+        console.warn('Failed to send postMessage:', error.message);
+        return false;
+    }
+}
         let tabs = [];
         let tabCount = 0;
         let activeTabId = null;
