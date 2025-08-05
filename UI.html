@@ -448,7 +448,7 @@ svg {
     text-shadow: 0 0 8px var(--glow-color);
 }
 
-#name-modal, #choice-modal {
+#name-modal, #choice-modal, #attach-modal {
     position: fixed;
     top: 30px;
     left: 0;
@@ -464,7 +464,7 @@ svg {
     backdrop-filter: blur(5px);
 }
 
-#name-modal.show, #choice-modal.show {
+#name-modal.show, #choice-modal.show, #attach-modal.show {
     display: flex;
     opacity: 1;
 }
@@ -503,7 +503,7 @@ svg {
     100% { transform: translateX(100%) rotate(45deg); }
 }
 
-#name-modal.show .modal-content, #choice-modal.show .modal-content {
+#name-modal.show .modal-content, #choice-modal.show .modal-content, #attach-modal.show .modal-content {
     transform: scale(1);
 }
 
@@ -535,7 +535,7 @@ svg {
     outline: none;
 }
 
-#name-modal.show .modal-content input, #choice-modal.show .modal-content input {
+#name-modal.show .modal-content input, #choice-modal.show .modal-content input, #attach-modal.show .modal-content input {
     transform: translateY(0);
     opacity: 1;
 }
@@ -583,7 +583,7 @@ svg {
     left: 100%;
 }
 
-#name-modal.show .modal-button, #choice-modal.show .modal-button {
+#name-modal.show .modal-button, #choice-modal.show .modal-button, #attach-modal.show .modal-button {
     transform: translateY(0);
     opacity: 1;
 }
@@ -674,6 +674,7 @@ svg {
         padding: 15px;
     }
 }
+
 .modal-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -742,165 +743,42 @@ svg {
             </div>
         </div>
         <div id="context-menu"></div>
+        <div id="attach-modal">
+            <div class="modal-content">
+                <h2 id="attach-title">Attaching to Roblox</h2>
+                <div class="modal-buttons">
+                    <button class="modal-button loading" id="attach-status">Attaching...</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-<div id="choice-modal">
-    <div class="modal-content">
-        <h2>Choose API</h2>
-        <div class="modal-buttons">
-            <button class="modal-button" id="velocity-choice">Velocity</button>
-            <button class="modal-button" id="xeno-choice">Xeno</button>
-            <button class="modal-button" id="solara-choice">Solara</button>
-        </div>
-        <button class="modal-button" id="reload-apis" style="margin-top: 10px; width: 100%;">Reload APIs</button>
-    </div>
-</div>
+
 
     <script>
-let selectedExecutor = null;
+
 
 function safePostMessage(message) {
-    try {
-        if (window.chrome && window.chrome.webview) {
-            window.chrome.webview.postMessage(message);
-        } else {
-            console.warn('postMessage not available, continuing execution');
-        }
-    } catch (error) {
-        console.warn('Failed to send postMessage:', error.message);
-    }
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-function showChoiceModal() {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('choice-modal');
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
-
-        const xenoButton = document.getElementById('xeno-choice');
-        const velocityButton = document.getElementById('velocity-choice');
-        const solaraButton = document.getElementById('solara-choice');
-        const reloadButton = document.getElementById('reload-apis');
-
-        const xenoHandler = () => {
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                selectedExecutor = 'xeno';
-                safePostMessage('X');
-                resolve('xeno');
-            }, 300);
-            removeListeners();
-        };
-
-        const velocityHandler = () => {
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                selectedExecutor = 'velocity';
-                safePostMessage('V');
-                resolve('velocity');
-            }, 300);
-            removeListeners();
-        };
-
-        const solaraHandler = () => {
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                selectedExecutor = 'solara';
-                safePostMessage('S');
-                resolve('solara');
-            }, 300);
-            removeListeners();
-        };
-const reloadHandler = () => {
-    const reloadButton = document.getElementById('reload-apis');
-    const xenoButton = document.getElementById('xeno-choice');
-    const velocityButton = document.getElementById('velocity-choice');
-    const solaraButton = document.getElementById('solara-choice');
-    let timeLeft = 300;
-    let countdownInterval;
-
-    xenoButton.disabled = true;
-    velocityButton.disabled = true;
-    solaraButton.disabled = true;
-    reloadButton.disabled = true;
-
-    const enableAllButtons = () => {
-        xenoButton.disabled = false;
-        velocityButton.disabled = false;
-        solaraButton.disabled = false;
-        reloadButton.disabled = false;
-    };
-    
-    const showFailedState = () => {
-        clearInterval(countdownInterval);
-        reloadButton.textContent = 'Reload Failed';
-        enableAllButtons();
-        setTimeout(() => {
-            reloadButton.textContent = 'Reload APIs';
-        }, 2000);
-    };
-    
-    countdownInterval = setInterval(() => {
-        timeLeft--;
-        reloadButton.textContent = `Reloading...`;
-
-        if (timeLeft <= 0) {
-            showFailedState();
-        }
-    }, 1000);
-
-
-    safePostMessage('reload');
-
-    if (window.chrome && window.chrome.webview) {
-        const responseHandler = (e) => {
-            if (e.data === 'R') {  
-                clearInterval(countdownInterval);
-                window.chrome.webview.removeEventListener('message', responseHandler);
-                reloadButton.textContent = 'Reload Complete';
-                enableAllButtons();
-                setTimeout(() => {
-                    reloadButton.textContent = 'Reload APIs';
-                }, 2000);
+            try {
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(message);
+                } else {
+                    console.warn('postMessage not available, continuing execution');
+                }
+            } catch (error) {
+                console.warn('Failed to send postMessage:', error.message);
             }
-        };
-        
-        window.chrome.webview.addEventListener('message', responseHandler);
-    }
-};
-
-        function removeListeners() {
-            xenoButton.removeEventListener('click', xenoHandler);
-            velocityButton.removeEventListener('click', velocityHandler);
-            solaraButton.removeEventListener('click', solaraHandler);
-            reloadButton.removeEventListener('click', reloadHandler);
         }
 
-        xenoButton.addEventListener('click', xenoHandler);
-        velocityButton.addEventListener('click', velocityHandler);
-        solaraButton.addEventListener('click', solaraHandler);
-        reloadButton.addEventListener('click', reloadHandler);
-    });
-}
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
 
-if (selectedExecutor === 'xeno') {
-    safePostMessage('X');
-} else if (selectedExecutor === 'velocity') {
-    safePostMessage('V');
-} else if (selectedExecutor === 'solara') {
-    safePostMessage('S');
-}
+
 			
         
 
@@ -1302,9 +1180,99 @@ function safePostMessage(message) {
             });
         }
 
-        function AttachCode() {
-            safePostMessage('Attach');
+function AttachCode() {
+    const modal = document.getElementById('attach-modal');
+    const title = document.getElementById('attach-title');
+    const statusButton = document.getElementById('attach-status');
+    let timeLeft = 130;
+    let countdownInterval;
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+    title.textContent = 'Attaching to Roblox';
+    statusButton.textContent = 'Attaching...';
+    statusButton.classList.add('loading');
+    statusButton.disabled = true;
+
+    const showFailedState = () => {
+        clearInterval(countdownInterval);
+        title.textContent = 'Attach Failed';
+        statusButton.classList.remove('loading');
+        setTimeout(() => {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                title.textContent = 'Attaching to Roblox';
+                statusButton.textContent = 'Attaching...';
+                statusButton.disabled = false;
+            }, 300);
+        }, 2000);
+    };
+
+    countdownInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            showFailedState();
         }
+    }, 1000);
+
+    safePostMessage('Attach');
+
+    if (window.chrome && window.chrome.webview) {
+        const responseHandler = (e) => {
+            if (e.data === 'W') {
+                clearInterval(countdownInterval);
+                window.chrome.webview.removeEventListener('message', responseHandler);
+                title.textContent = 'Attach Complete';
+                statusButton.classList.remove('loading');
+                setTimeout(() => {
+                    modal.classList.remove('show');
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                        title.textContent = 'Attaching to Roblox';
+                        statusButton.textContent = 'Attaching...';
+                        statusButton.disabled = false;
+                    }, 300);
+                }, 1000);
+            } else if (e.data === 'A') {
+                clearInterval(countdownInterval);
+                window.chrome.webview.removeEventListener('message', responseHandler);
+                title.textContent = 'Already Attached';
+                statusButton.classList.remove('loading');
+                setTimeout(() => {
+                    modal.classList.remove('show');
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                        title.textContent = 'Attaching to Roblox';
+                        statusButton.textContent = 'Attaching...';
+                        statusButton.disabled = false;
+                    }, 300);
+                }, 1000);
+            }
+        };
+
+        window.chrome.webview.addEventListener('message', responseHandler);
+    }
+
+    const closeModal = (e) => {
+        if (!modal.contains(e.target) && !document.getElementById('context-menu').contains(e.target) && !document.getElementById('name-modal').contains(e.target) && !document.getElementById('choice-modal').contains(e.target)) {
+            clearInterval(countdownInterval);
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                title.textContent = 'Attaching to Roblox';
+                statusButton.textContent = 'Attaching...';
+                statusButton.classList.remove('loading');
+                statusButton.disabled = false;
+            }, 300);
+            window.removeEventListener('click', closeModal);
+        }
+    };
+
+    setTimeout(() => {
+        window.addEventListener('click', closeModal);
+    }, 10);
+}
 
         function clearEditor() {
             if (editor) {
@@ -1521,7 +1489,7 @@ function safePostMessage(message) {
         }
 
         async function initialize() {
-            await showChoiceModal();
+
             document.getElementById('editor-mode').style.display = 'flex';
             loadMonacoScript(() => {
                 initializeMonacoEditor();
